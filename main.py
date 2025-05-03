@@ -19,16 +19,11 @@ analyzer = CurveAnalyzer(pfad, kategorien_auswahl)
 analyzer.ausführen()
 
 ### --- Feature Engineering --- ###
-from Feature_Engineering import FeatureEngineer
+from Feature_Engineering import FeatureEngineerMultiSheet
 
-# 1. Initialisieren
-engineer = FeatureEngineer("xlsx_files/DOEs_aufbereitet_alle_sheets_neu.xlsx")
-
-# 2. Schritte durchführen
-engineer.extract_features()
-engineer.apply_clustering()
-engineer.reduce_correlated_features()
-engineer.save_features("xlsx_files/alle_formparameter_finale.csv")
+pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
+engineer = FeatureEngineerMultiSheet(excel_path=pfad)
+engineer.process_all_sheets()
 
 ### --- ML Modell --- ###
 from MML import MLModel

@@ -8,34 +8,46 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
+import os
 
 
-class FeatureEngineer:
-    def __init__(self, excel_path, protected_features=None, correlation_threshold=0.7):
+class FeatureEngineerMultiSheet:
+    def __init__(self, excel_path, protected_features=None, correlation_threshold=0.7, output_dir="xlsx_files/features"):
         self.excel_path = excel_path
-        self.df_raw = pd.read_excel(excel_path)
-        self.df_features = None
+        self.sheets_raw = pd.read_excel(excel_path, sheet_name=None)
         self.protected_features = protected_features or {"global_max_x", "global_min_x"}
         self.correlation_threshold = correlation_threshold
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
 
-    def extract_features(self):
-        kurven_dict = {
-            cu_id: gruppe.sort_values(by="x_achse")[["x_achse", "y_achse"]].rename(columns={"x_achse": "x", "y_achse": "y"})
-            for cu_id, gruppe in self.df_raw.groupby("cu_id")
-        }
+    def process_all_sheets(self):
+        for sheetname, df_raw in self.sheets_raw.items():
+            print(f"\nBearbeite Sheet: {sheetname}")
+            df_features = self.extract_features(df_raw)
+            if df_features.empty:
+                print(f"Überspringe Sheet {sheetname} – zu wenige gültige Kurven.")
+                continue
 
+            df_features = self.apply_clustering(df_features)
+            df_features = self.reduce_correlated_features(df_features)
+
+            output_path = os.path.join(self.output_dir, f"{sheetname}_features.csv")
+            df_features.to_csv(output_path, sep=";", index=False)
+            print(f"Gespeichert: {output_path}")
+
+    def extract_features(self, df_raw):
         feature_list = []
 
-        for cu_id, df_curve in kurven_dict.items():
+        for cu_id, gruppe in df_raw.groupby("cu_id"):
+            df_curve = gruppe.sort_values(by="x_achse")[["x_achse", "y_achse"]].rename(columns={"x_achse": "x", "y_achse": "y"})
             x = df_curve["x"].values
             y = df_curve["y"].values
 
             if len(x) < 5:
                 continue
 
-            kategorie = self.df_raw[self.df_raw["cu_id"] == cu_id]["Kategorie"].iloc[0]
+            kategorie = gruppe["Kategorie"].iloc[0]
 
-            # Feature-Berechnung
             x_center = (x.min() + x.max()) / 2
             max_x = x[np.argmax(y)]
             symmetry_deviation = (max_x - x_center) / (x.max() - x.min())
@@ -75,33 +87,34 @@ class FeatureEngineer:
                 "Peak_to_Minima_Diff": peak_to_min_diff
             })
 
-        self.df_features = pd.DataFrame(feature_list)
+        return pd.DataFrame(feature_list)
 
-    def apply_clustering(self, n_clusters=3):
-        feature_cols = [col for col in self.df_features.columns if col not in {"cu_id", "kategorie"}]
-        features_scaled = StandardScaler().fit_transform(self.df_features[feature_cols])
+    def apply_clustering(self, df_features, n_clusters=3):
+        feature_cols = [col for col in df_features.columns if col not in {"cu_id", "kategorie"}]
+        features_scaled = StandardScaler().fit_transform(df_features[feature_cols])
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        self.df_features["cluster"] = kmeans.fit_predict(features_scaled)
+        df_features["cluster"] = kmeans.fit_predict(features_scaled)
 
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(features_scaled)
-        self.df_features["PCA1"] = pca_result[:, 0]
-        self.df_features["PCA2"] = pca_result[:, 1]
+        df_features["PCA1"] = pca_result[:, 0]
+        df_features["PCA2"] = pca_result[:, 1]
 
-        # Visualisierung
+        # Optional: Plot kann kommentiert werden
         plt.figure(figsize=(8, 6))
-        sns.scatterplot(data=self.df_features, x="PCA1", y="PCA2", hue="cluster", palette="Set1")
+        sns.scatterplot(data=df_features, x="PCA1", y="PCA2", hue="cluster", palette="Set1")
         plt.title("KMeans-Clustering der Kurven (PCA 2D)")
         plt.grid(True)
-        plt.legend(title="Cluster")
         plt.tight_layout()
         plt.show()
 
-    def reduce_correlated_features(self):
+        return df_features
+
+    def reduce_correlated_features(self, df_features):
         exclude_cols = {"cu_id", "cluster", "PCA1", "PCA2", "kategorie"}
-        feature_cols = [col for col in self.df_features.columns if col not in exclude_cols]
-        corr = self.df_features[feature_cols].corr().abs()
+        feature_cols = [col for col in df_features.columns if col not in exclude_cols]
+        corr = df_features[feature_cols].corr().abs()
 
         correlated_groups = defaultdict(set)
         for i in range(len(corr.columns)):
@@ -130,19 +143,13 @@ class FeatureEngineer:
             if not keep_candidates:
                 continue
 
-            group_variances = self.df_features[keep_candidates].var()
+            group_variances = df_features[keep_candidates].var()
             best_col = group_variances.idxmax()
 
             for col in group:
                 if col != best_col and col not in self.protected_features:
                     to_drop.add(col)
 
-        self.df_features = self.df_features.drop(columns=to_drop)
-        print("✅ Entfernte korrelierte Features:", sorted(to_drop))
-
-    def save_features(self, path="xlsx_files/alle_formparameter_final.csv"):
-        self.df_features.to_csv(path, sep=";", index=False)
-        print(f"✅ Feature-Datei gespeichert unter: {path}")
-
-
-
+        df_reduced = df_features.drop(columns=to_drop)
+        print("Entfernte korrelierte Features:", sorted(to_drop))
+        return df_reduced
