@@ -28,9 +28,16 @@ engineer.process_all_sheets()
 ### --- ML Modell --- ###
 from MML import MLModel
 
-# Pfad zur CSV anpassen
-csv_file = "xlsx_files/alle_formparameter_finale.csv"
+# Liste der CSV-Dateien
+csv_files = [
+    "xlsx_files/features/DOE1_features.csv",
+    "xlsx_files/features/DOE2_features.csv",
+    "xlsx_files/features/DOE3_features.csv"
+]
 
-# Modellobjekt erzeugen und Pipeline ausführen
-model = MLModel(csv_path=csv_file)
-model.run_all()
+# Jede Datei einzeln mit dem Modell verarbeiten
+for csv_file in csv_files:
+    print(f"\nStarte ML-Pipeline für: {csv_file}")
+    model = MLModel(csv_path=csv_file)
+    model.run_all()
+

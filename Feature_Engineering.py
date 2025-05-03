@@ -12,13 +12,16 @@ import os
 
 
 class FeatureEngineerMultiSheet:
-    def __init__(self, excel_path, protected_features=None, correlation_threshold=0.7, output_dir="xlsx_files/features"):
+    def __init__(self, excel_path, protected_features=None, correlation_threshold=0.7,
+                 output_dir="xlsx_files/features", plot_dir="Cluster_PCA_Plots"):
         self.excel_path = excel_path
         self.sheets_raw = pd.read_excel(excel_path, sheet_name=None)
         self.protected_features = protected_features or {"global_max_x", "global_min_x"}
         self.correlation_threshold = correlation_threshold
         self.output_dir = output_dir
+        self.plot_dir = plot_dir
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.plot_dir, exist_ok=True)
 
     def process_all_sheets(self):
         for sheetname, df_raw in self.sheets_raw.items():
@@ -28,7 +31,7 @@ class FeatureEngineerMultiSheet:
                 print(f"Überspringe Sheet {sheetname} – zu wenige gültige Kurven.")
                 continue
 
-            df_features = self.apply_clustering(df_features)
+            df_features = self.apply_clustering(df_features, sheetname)
             df_features = self.reduce_correlated_features(df_features)
 
             output_path = os.path.join(self.output_dir, f"{sheetname}_features.csv")
@@ -89,7 +92,7 @@ class FeatureEngineerMultiSheet:
 
         return pd.DataFrame(feature_list)
 
-    def apply_clustering(self, df_features, n_clusters=3):
+    def apply_clustering(self, df_features, sheetname, n_clusters=3):
         feature_cols = [col for col in df_features.columns if col not in {"cu_id", "kategorie"}]
         features_scaled = StandardScaler().fit_transform(df_features[feature_cols])
 
@@ -101,13 +104,17 @@ class FeatureEngineerMultiSheet:
         df_features["PCA1"] = pca_result[:, 0]
         df_features["PCA2"] = pca_result[:, 1]
 
-        # Optional: Plot kann kommentiert werden
+        # Plot speichern
         plt.figure(figsize=(8, 6))
         sns.scatterplot(data=df_features, x="PCA1", y="PCA2", hue="cluster", palette="Set1")
-        plt.title("KMeans-Clustering der Kurven (PCA 2D)")
+        plt.title(f"KMeans-Clustering – {sheetname}")
         plt.grid(True)
         plt.tight_layout()
-        plt.show()
+
+        plot_path = os.path.join(self.plot_dir, f"{sheetname}_PCA_Cluster.png")
+        plt.savefig(plot_path)
+        plt.close()
+        print(f"PCA-Plot gespeichert: {plot_path}")
 
         return df_features
 
