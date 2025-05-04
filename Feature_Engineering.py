@@ -33,6 +33,7 @@ class FeatureEngineerMultiSheet:
 
             df_features = self.apply_clustering(df_features, sheetname)
             df_features = self.reduce_correlated_features(df_features)
+            self.plot_category1_curves_with_features(df_raw, df_features, sheetname)
 
             output_path = os.path.join(self.output_dir, f"{sheetname}_features.csv")
             df_features.to_csv(output_path, sep=";", index=False)
@@ -159,10 +160,21 @@ class FeatureEngineerMultiSheet:
 
         df_reduced = df_features.drop(columns=to_drop)
         print("Entfernte korrelierte Features:", sorted(to_drop))
+        self.save_correlation_matrix(corr, sheetname=df_features.get("kategorie", ["Unknown"])[0])
         return df_reduced
-    
-        plot_path = os.path.join(self.plot_dir, "correlation_matrix.png")
+
+    def save_correlation_matrix(self, corr_matrix, sheetname):
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
+        plt.title(f"Korrelationsmatrix – {sheetname}")
+        plt.tight_layout()
+
+        plot_path = os.path.join(self.plot_dir, f"{sheetname}_correlation_matrix.png")
         plt.savefig(plot_path)
         plt.close()
         print(f"Korrelationsmatrix gespeichert: {plot_path}")
 
+if __name__ == "__main__":
+    pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
+    engineer = FeatureEngineerMultiSheet(excel_path=pfad)
+    engineer.process_all_sheets()
