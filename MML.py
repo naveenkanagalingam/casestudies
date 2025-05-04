@@ -29,7 +29,7 @@ class MLModel:
         self.df = pd.read_csv(self.csv_path, sep=";")
         print(f"[{self.model_id}] CSV geladen mit {self.df.shape[0]} Zeilen und {self.df.shape[1]} Spalten.")
 
-        # Zielvariable in binär umwandeln: 1 = perfekt, 0 = schmutz
+        # Zielvariable in binär umwandeln: 1 = perfekt, 0 = schlecht
         self.df[self.target_column] = (self.df[self.target_column] == 1).astype(int)
         print(f"[{self.model_id}] 'kategorie' in binäre Zielvariable umgewandelt.")
 

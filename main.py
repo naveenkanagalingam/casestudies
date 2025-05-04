@@ -21,7 +21,7 @@ analyzer.ausführen()
 ### --- Feature Engineering --- ###
 from Feature_Engineering import FeatureEngineerMultiSheet
 
-pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
+pfad = "xlsx_files/DOEs_aufbereitet_alle_sheets_neu.xlsx"
 engineer = FeatureEngineerMultiSheet(excel_path=pfad)
 engineer.process_all_sheets()
 
