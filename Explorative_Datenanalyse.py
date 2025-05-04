@@ -109,11 +109,11 @@ class CurveAnalyzer:
         self.verarbeite_sheets()
         self.speichere_alle_sheets()
 
-if __name__ == "__main__":
-    # Benutzerinteraktion
-    pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
-    eingabe = input("Gib die Kategorien-Auswahl ein (z. B. 1,2 oder 1 2): ").replace(",", " ")
-    kategorien_auswahl = [int(k) for k in eingabe.split() if k.strip().isdigit()]
+# if __name__ == "__main__":
+#     # Benutzerinteraktion
+#     pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
+#     eingabe = input("Gib die Kategorien-Auswahl ein (z. B. 1,2 oder 1 2): ").replace(",", " ")
+#     kategorien_auswahl = [int(k) for k in eingabe.split() if k.strip().isdigit()]
 
-    analyzer = CurveAnalyzer(pfad, kategorien_auswahl)
-    analyzer.ausführen()
+#     analyzer = CurveAnalyzer(pfad, kategorien_auswahl)
+#     analyzer.ausführen()

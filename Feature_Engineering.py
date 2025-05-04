@@ -33,11 +33,11 @@ class FeatureEngineerMultiSheet:
 
             df_features = self.apply_clustering(df_features, sheetname)
             df_features = self.reduce_correlated_features(df_features)
-            self.plot_category1_curves_with_features(df_raw, df_features, sheetname)
 
             output_path = os.path.join(self.output_dir, f"{sheetname}_features.csv")
             df_features.to_csv(output_path, sep=";", index=False)
             print(f"Gespeichert: {output_path}")
+
 
     def extract_features(self, df_raw):
         feature_list = []
@@ -174,7 +174,7 @@ class FeatureEngineerMultiSheet:
         plt.close()
         print(f"Korrelationsmatrix gespeichert: {plot_path}")
 
-if __name__ == "__main__":
-    pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
-    engineer = FeatureEngineerMultiSheet(excel_path=pfad)
-    engineer.process_all_sheets()
+# if __name__ == "__main__":
+#     pfad = "xlsx_files/DOEs_aufbereitet.xlsx"
+#     engineer = FeatureEngineerMultiSheet(excel_path=pfad)
+#     engineer.process_all_sheets()

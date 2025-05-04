@@ -27,17 +27,14 @@ engineer.process_all_sheets()
 
 ### --- ML Modell --- ###
 from MML import MLModel
+from MML import run_multiple_models
 
-# Liste der CSV-Dateien
+
 csv_files = [
     "xlsx_files/features/DOE1_features.csv",
     "xlsx_files/features/DOE2_features.csv",
     "xlsx_files/features/DOE3_features.csv"
 ]
 
-# Jede Datei einzeln mit dem Modell verarbeiten
-for csv_file in csv_files:
-    print(f"\nStarte ML-Pipeline für: {csv_file}")
-    model = MLModel(csv_path=csv_file)
-    model.run_all()
+run_multiple_models(csv_files)
 
