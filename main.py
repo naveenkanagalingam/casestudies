@@ -26,8 +26,8 @@ engineer = FeatureEngineerMultiSheet(excel_path=pfad)
 engineer.process_all_sheets()
 
 ### --- ML Modell --- ###
-from MML import MLModel
-from MML import run_multiple_models
+from Machine_Learning_Models.Random_Forest_Classifier import MLModel
+from Machine_Learning_Models.Random_Forest_Classifier import run_multiple_models
 
 
 csv_files = [
@@ -38,3 +38,24 @@ csv_files = [
 
 run_multiple_models(csv_files)
 
+### --- Logistische Regression --- ###
+from Machine_Learning_Models.Logistische_Regression import LogisticRegressionModel
+
+csv_files = [
+    "xlsx_files/features/DOE1_features.csv",
+    "xlsx_files/features/DOE2_features.csv",
+    "xlsx_files/features/DOE3_features.csv"
+]
+
+LogisticRegressionModel.run_multiple_logistic_models(csv_files)
+
+### --- Gradient Boosting Model --- ###
+from Machine_Learning_Models.GradientBoostingModel import GradientBoostingModel
+
+csv_files = [
+    "xlsx_files/features/DOE1_features.csv",
+    "xlsx_files/features/DOE2_features.csv",
+    "xlsx_files/features/DOE3_features.csv"
+]
+
+GradientBoostingModel.run_multiple_gradient_boosting_models(csv_files)
