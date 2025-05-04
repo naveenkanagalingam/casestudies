@@ -160,3 +160,9 @@ class FeatureEngineerMultiSheet:
         df_reduced = df_features.drop(columns=to_drop)
         print("Entfernte korrelierte Features:", sorted(to_drop))
         return df_reduced
+    
+        plot_path = os.path.join(self.plot_dir, "correlation_matrix.png")
+        plt.savefig(plot_path)
+        plt.close()
+        print(f"Korrelationsmatrix gespeichert: {plot_path}")
+
