@@ -100,7 +100,9 @@ class CurveAnalyzer:
         plt.ylabel("y")
         plt.legend()
         plt.tight_layout()
-        plot_path = f"plots/{sheetname}_kurven.png"
+        kategorien_ungleich_1 = sorted(set(df_analyse['Kategorie']) - {1})
+        kategorien_str = "_".join(map(str, kategorien_ungleich_1)) if kategorien_ungleich_1 else "nur_1"
+        plot_path = f"plots/{sheetname}_kat_{kategorien_str}_kurven.png"
         plt.savefig(plot_path, dpi=300)
         plt.close()
 
