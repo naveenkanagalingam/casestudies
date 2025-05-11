@@ -57,7 +57,10 @@ class KorrelationsmatrixGenerator:
                     continue
 
                 if df_corr.iloc[i, j] > self.korrelationsschwelle:
-                    if col1 in self.priorisierte_features and col2 not in self.priorisierte_features:
+                    # Falls beide priorisiert sind → nichts löschen
+                    if col1 in self.priorisierte_features and col2 in self.priorisierte_features:
+                        continue
+                    elif col1 in self.priorisierte_features and col2 not in self.priorisierte_features:
                         to_drop.add(col2)
                     elif col2 in self.priorisierte_features and col1 not in self.priorisierte_features:
                         to_drop.add(col1)
@@ -66,6 +69,7 @@ class KorrelationsmatrixGenerator:
                         std2 = numeric_df[col2].std()
                         less_important = col1 if std1 < std2 else col2
                         to_drop.add(less_important)
+
 
         # 4. Reduziertes DataFrame erstellen und wichtige Spalten wieder anhängen
         reduced_df = numeric_df.drop(columns=to_drop)
