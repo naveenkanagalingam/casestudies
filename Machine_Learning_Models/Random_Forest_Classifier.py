@@ -11,9 +11,9 @@ import os
 
 
 class MLModel:
-    def __init__(self, csv_path, model_id, target_column="kategorie", drop_columns=None, test_size=0.2):
-        self.csv_path = csv_path
-        self.model_id = model_id  # Eindeutige Kennung z.B. 1, 2, 3
+    def __init__(self, excel_path, model_id, target_column="kategorie", drop_columns=None, test_size=0.2):
+        self.excel_path = excel_path
+        self.model_id = model_id
         self.target_column = target_column
         self.drop_columns = drop_columns or ["cu_id"]
         self.test_size = test_size
@@ -26,12 +26,18 @@ class MLModel:
         self.model = RandomForestClassifier(n_estimators=100, random_state=42)
 
     def load_data(self):
-        self.df = pd.read_csv(self.csv_path, sep=";")
-        print(f"[{self.model_id}] CSV geladen mit {self.df.shape[0]} Zeilen und {self.df.shape[1]} Spalten.")
+        try:
+            self.df = pd.read_excel(self.excel_path)
+            print(f"[{self.model_id}] Excel geladen mit {self.df.shape[0]} Zeilen und {self.df.shape[1]} Spalten.")
+        except Exception as e:
+            print(f"[{self.model_id}] Fehler beim Laden der Datei: {self.excel_path}\n{e}")
+            return
 
-        # Zielvariable in binär umwandeln: 1 = perfekt, 0 = schlecht
-        self.df[self.target_column] = (self.df[self.target_column] == 1).astype(int)
-        print(f"[{self.model_id}] 'kategorie' in binäre Zielvariable umgewandelt.")
+        if self.target_column in self.df.columns:
+            self.df[self.target_column] = (self.df[self.target_column] == 1).astype(int)
+            print(f"[{self.model_id}] '{self.target_column}' in binäre Zielvariable umgewandelt.")
+        else:
+            raise ValueError(f"Zielspalte '{self.target_column}' nicht in Datei enthalten.")
 
         print(f"\n[{self.model_id}] Klassenverteilung:")
         print(self.df[self.target_column].value_counts())
@@ -56,7 +62,6 @@ class MLModel:
     def evaluate_model(self):
         y_pred = self.model.predict(self.X_test)
 
-        # Klassifikationsbericht als Text
         report = classification_report(
             self.y_test,
             y_pred,
@@ -66,7 +71,6 @@ class MLModel:
         print(f"\n[{self.model_id}] Klassifikationsbericht:")
         print(report)
 
-        # Konfusionsmatrix plotten
         cm = confusion_matrix(self.y_test, y_pred, labels=[0, 1])
         plt.figure(figsize=(6, 4))
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
@@ -77,13 +81,11 @@ class MLModel:
         plt.ylabel("Tatsächlich")
         plt.tight_layout()
 
-        # Speicherordner anlegen
         os.makedirs("Konfusionsmatrix", exist_ok=True)
         os.makedirs("Klassifikationsberichte", exist_ok=True)
 
-        # Dateien speichern
-        matrix_path = os.path.join("Konfusionsmatrix", f"konfusionsmatrix_{self.model_id}.png")
-        report_path = os.path.join("Klassifikationsberichte", f"bericht_{self.model_id}.txt")
+        matrix_path = os.path.join("Konfusionsmatrix", f"RFC_konfusionsmatrix_{self.model_id}.png")
+        report_path = os.path.join("Klassifikationsberichte", f"RFC_bericht_{self.model_id}.txt")
 
         plt.savefig(matrix_path)
         print(f"[{self.model_id}] Konfusionsmatrix gespeichert unter: {matrix_path}")
@@ -93,7 +95,6 @@ class MLModel:
             f.write(report)
         print(f"[{self.model_id}] Klassifikationsbericht gespeichert unter: {report_path}")
 
-
     def run_all(self):
         self.load_data()
         self.prepare_data()
@@ -101,8 +102,8 @@ class MLModel:
         self.evaluate_model()
 
 
-def run_multiple_models(csv_paths):
-    for idx, path in enumerate(csv_paths, start=1):
+def run_multiple_models(excel_paths):
+    for idx, path in enumerate(excel_paths, start=1):
         print(f"\n===== Verarbeitung von Datei {idx}: {path} =====")
-        model = MLModel(csv_path=path, model_id=idx)
+        model = MLModel(excel_path=path, model_id=idx)
         model.run_all()

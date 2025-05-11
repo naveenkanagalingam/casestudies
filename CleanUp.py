@@ -9,7 +9,14 @@ class FolderCleaner:
             "Cluster_PCA_Plots",
             "Konfusionsmatrix",
             "plots",
-            "xlsx_files"
+            "xlsx_files",
+            "Plots_DTW_Verteilungen",
+            "Plots_Heatmaps",
+            "Plots_Improved",
+            'extended_features',
+            'features',
+            'Korrelation',
+            'feature_excels'
         ]
         self.exclude_files = {"DOEs.xlsx"}
 

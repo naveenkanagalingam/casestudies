@@ -11,8 +11,8 @@ import os
 
 
 class GradientBoostingModel:
-    def __init__(self, csv_path, model_id, target_column="kategorie", drop_columns=None, test_size=0.2):
-        self.csv_path = csv_path
+    def __init__(self, excel_path, model_id, target_column="kategorie", drop_columns=None, test_size=0.2):
+        self.excel_path = excel_path
         self.model_id = model_id
         self.target_column = target_column
         self.drop_columns = drop_columns or ["cu_id"]
@@ -26,12 +26,18 @@ class GradientBoostingModel:
         self.model = HistGradientBoostingClassifier(random_state=42)
 
     def load_data(self):
-        self.df = pd.read_csv(self.csv_path, sep=";")
-        print(f"[{self.model_id}] CSV geladen mit {self.df.shape[0]} Zeilen und {self.df.shape[1]} Spalten.")
+        try:
+            self.df = pd.read_excel(self.excel_path)
+            print(f"[{self.model_id}] Excel geladen mit {self.df.shape[0]} Zeilen und {self.df.shape[1]} Spalten.")
+        except Exception as e:
+            print(f"[{self.model_id}] Fehler beim Laden der Excel-Datei: {self.excel_path}\n{e}")
+            return
 
-        # Zielvariable in binär umwandeln
-        self.df[self.target_column] = (self.df[self.target_column] == 1).astype(int)
-        print(f"[{self.model_id}] 'kategorie' in binäre Zielvariable umgewandelt.")
+        if self.target_column in self.df.columns:
+            self.df[self.target_column] = (self.df[self.target_column] == 1).astype(int)
+            print(f"[{self.model_id}] '{self.target_column}' in binäre Zielvariable umgewandelt.")
+        else:
+            raise ValueError(f"Zielspalte '{self.target_column}' nicht in Daten enthalten.")
 
         print(f"\n[{self.model_id}] Klassenverteilung:")
         print(self.df[self.target_column].value_counts())
@@ -75,8 +81,8 @@ class GradientBoostingModel:
         os.makedirs("Konfusionsmatrix", exist_ok=True)
         os.makedirs("Klassifikationsberichte", exist_ok=True)
 
-        matrix_path = os.path.join("Konfusionsmatrix", f"konfusionsmatrix_{self.model_id}.png")
-        report_path = os.path.join("Klassifikationsberichte", f"bericht_{self.model_id}.txt")
+        matrix_path = os.path.join("Konfusionsmatrix", f"GBM_konfusionsmatrix_{self.model_id}.png")
+        report_path = os.path.join("Klassifikationsberichte", f"GBM_bericht_{self.model_id}.txt")
 
         plt.savefig(matrix_path)
         plt.close()
@@ -93,8 +99,8 @@ class GradientBoostingModel:
         self.evaluate_model()
 
 
-def run_multiple_gradient_boosting_models(csv_paths):
-    for idx, path in enumerate(csv_paths, start=1):
+def run_multiple_gradient_boosting_models(excel_paths):
+    for idx, path in enumerate(excel_paths, start=1):
         print(f"\n===== Verarbeitung von Datei {idx}: {path} =====")
-        model = GradientBoostingModel(csv_path=path, model_id=idx)
+        model = GradientBoostingModel(excel_path=path, model_id=idx)
         model.run_all()

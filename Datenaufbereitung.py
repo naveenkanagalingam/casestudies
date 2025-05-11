@@ -46,6 +46,10 @@ class DOEConverter:
                 raw_cu_x = row['cu_x']
                 raw_cu_y = row['cu_y']
                 kategorie = row.get('cu_machine_parameter_values_id', None)
+                mpv_injection_speed = row['mpv_injection_speed']
+                mpv_holding_pressure = row['mpv_holding_pressure']
+                mpv_mold_temp = row['mpv_mold_temp']
+
 
                 if pd.notna(raw_cu_x) and pd.notna(raw_cu_y):
                     liste_cu_x = [float(x.strip()) for x in raw_cu_x.strip('{}').split(',')]
@@ -56,7 +60,10 @@ class DOEConverter:
                             'cu_id': cu_id,
                             'x_achse': liste_cu_x,
                             'y_achse': liste_cu_y,
-                            'Kategorie': kategorie
+                            'Kategorie': kategorie,
+                            'mpv_injection_speed': mpv_injection_speed,
+                            'mpv_holding_pressure': mpv_holding_pressure,
+                            'mpv_mold_temp': mpv_mold_temp
                         })
                         alle_daten_sheet.append(df_temp)
                     else:
