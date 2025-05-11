@@ -21,8 +21,10 @@ analyzer.ausführen()
 ### --- Feature Engineering --- ###
 from Feature_Engineering import process_excel_with_multiple_sheets
 
-input_excel = "xlsx_files/DOEs_aufbereitet_alle_sheets_neu.xlsx"
-process_excel_with_multiple_sheets(input_excel)
+if __name__ == "__main__":
+    input_excel = "xlsx_files/DOEs_aufbereitet_alle_sheets_neu.xlsx"
+    process_excel_with_multiple_sheets(input_excel)
+
 
 ### --- Korrelationsmatrix --- ###
 from Korrelationsmatrizen import KorrelationsmatrixGenerator
@@ -33,9 +35,8 @@ excel_files = [
     'feature_excels/DOE3_features.xlsx'
 ]
 
-# Manuell bevorzugte Features:
 priorisierte_features = {
-    "area_total", "global_maxima", "Trajectory_length", "slope_max", 'peak_count', 'valley_count'
+    "area_total", "global_maxima", "Trajectory_length", "slope_max", "peak_count", "valley_count"
 }
 
 if __name__ == "__main__":
@@ -45,6 +46,7 @@ if __name__ == "__main__":
         priorisierte_features=priorisierte_features
     )
     generator.erstelle_korrelationen()
+
 
 ### --- ML Modell --- ###
 from Machine_Learning_Models.Random_Forest_Classifier import MLModel

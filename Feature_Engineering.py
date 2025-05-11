@@ -1,144 +1,88 @@
-import os
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+import numpy as np
+from scipy.signal import find_peaks
+import os
 
-class KorrelationsmatrixGenerator:
-    def __init__(self, dateipfade, output_dir="Korrelation", korrelationsschwelle=0.9, priorisierte_features=None):
-        self.dateipfade = dateipfade
-        self.output_dir = output_dir
-        self.korrelationsschwelle = korrelationsschwelle
-        self.priorisierte_features = set(priorisierte_features) if priorisierte_features else set()
-        os.makedirs(self.output_dir, exist_ok=True)
+def calculate_features(df_group):
+    y = df_group['y_achse'].values
+    x = df_group['x_achse'].values
 
-    def erstelle_korrelationen(self):
-        for datei in self.dateipfade:
-            self._verarbeite_datei(datei)
+    area_total = float(np.trapz(y, x))
+    global_maxima = float(np.max(y))
+    global_minima = float(np.min(y))
+    sd = float(np.std(y))
+    trajectory_length = float(np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2)))
+    peak_count = int(len(find_peaks(y)[0]))
+    valley_count = int(len(find_peaks(-y)[0]))
 
-    def _verarbeite_datei(self, pfad):
-        if not os.path.exists(pfad):
-            print(f"Datei nicht gefunden: {pfad}")
-            return
+    slope = np.gradient(y, x)
+    slope_max = float(np.max(slope))
+    slope_min = float(np.min(slope))
 
-        try:
-            df = pd.read_excel(pfad)
-        except Exception as e:
-            print(f"Fehler beim Lesen von {pfad}: {e}")
-            return
+    q = len(y) // 4
+    slope_phase1 = float(np.mean(slope[:q]))
+    slope_phase2 = float(np.mean(slope[q:2*q]))
+    slope_phase3 = float(np.mean(slope[2*q:3*q]))
+    slope_phase4 = float(np.mean(slope[3*q:]))
 
-        sheetname = os.path.splitext(os.path.basename(pfad))[0]
+    features = {
+        'area_total': area_total,
+        'global_maxima': global_maxima,
+        'global_minima': global_minima,
+        'sd': sd,
+        'Trajectory_length': trajectory_length,
+        'peak_count': peak_count,
+        'valley_count': valley_count,
+        'slope_max': slope_max,
+        'slope_min': slope_min,
+        'slope_phase1': slope_phase1,
+        'slope_phase2': slope_phase2,
+        'slope_phase3': slope_phase3,
+        'slope_phase4': slope_phase4,
+        'mpv_injection_speed': float(df_group['mpv_injection_speed'].mean()),
+        'mpv_holding_pressure': float(df_group['mpv_holding_pressure'].mean()),
+        'mpv_mold_temp': float(df_group['mpv_mold_temp'].mean()),
+        'cu_id': df_group['cu_id'].iloc[0],
+        'kategorie': df_group['Kategorie'].iloc[0]
+    }
 
-        exclude_cols = {"cu_id", "kategorie"}
-        feature_cols = [col for col in df.columns if col not in exclude_cols]
-        numeric_df = df[feature_cols].select_dtypes(include='number')
+    return features
 
-        # 1. Korrelationsmatrix berechnen
-        df_corr = numeric_df.corr().abs()
+def process_excel_with_multiple_sheets(input_excel_path, output_folder='feature_excels'):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        print(f"Zielordner erstellt: {output_folder}")
+    else:
+        print(f"Zielordner vorhanden: {output_folder}")
 
-        # 2. Speichere ursprüngliche Korrelationsmatrix als Bild
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(df_corr, annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
-        plt.title(f"Korrelationsmatrix – {sheetname}")
-        plt.tight_layout()
-        plot_path = os.path.join(self.output_dir, f"{sheetname}_correlation_matrix.png")
-        plt.savefig(plot_path, dpi=300)
-        plt.close()
-        print(f"Korrelationsmatrix gespeichert: {plot_path}")
+    all_sheets = pd.read_excel(input_excel_path, sheet_name=None)
 
-        # 3. Hoch korrelierte Paare erkennen und Auswahl treffen
-        to_drop = set()
-        entscheidungen = []  # Liste für Logging
-        columns = list(df_corr.columns)
+    for sheet_name, df in all_sheets.items():
+        print(f"Verarbeite Sheet: {sheet_name}")
 
-        for i in range(len(columns)):
-            for j in range(i + 1, len(columns)):
-                col1 = columns[i]
-                col2 = columns[j]
+        required_cols = {'cu_id', 'x_achse', 'y_achse'}
+        if not required_cols.issubset(df.columns):
+            print(f"Übersprungen: '{sheet_name}' enthält nicht alle benötigten Spalten {required_cols}")
+            continue
 
-                if col1 in to_drop or col2 in to_drop:
-                    continue
+        features_list = []
+        for cu_id, group_df in df.groupby('cu_id'):
+            feature_row = calculate_features(group_df)
+            features_list.append(feature_row)
 
-                corr_val = df_corr.loc[col1, col2]
-                if corr_val > self.korrelationsschwelle:
-                    if col1 in self.priorisierte_features and col2 in self.priorisierte_features:
-                        entscheidungen.append({
-                            "feature_1": col1,
-                            "feature_2": col2,
-                            "korrelation": corr_val,
-                            "aktion": "beide priorisiert – behalten"
-                        })
-                        continue
-                    elif col1 in self.priorisierte_features:
-                        to_drop.add(col2)
-                        entscheidungen.append({
-                            "feature_1": col1,
-                            "feature_2": col2,
-                            "korrelation": corr_val,
-                            "aktion": f"{col2} gelöscht (nicht priorisiert)"
-                        })
-                    elif col2 in self.priorisierte_features:
-                        to_drop.add(col1)
-                        entscheidungen.append({
-                            "feature_1": col1,
-                            "feature_2": col2,
-                            "korrelation": corr_val,
-                            "aktion": f"{col1} gelöscht (nicht priorisiert)"
-                        })
-                    else:
-                        std1 = numeric_df[col1].std()
-                        std2 = numeric_df[col2].std()
-                        less_important = col1 if std1 < std2 else col2
-                        if less_important not in self.priorisierte_features:
-                            to_drop.add(less_important)
-                            entscheidungen.append({
-                                "feature_1": col1,
-                                "feature_2": col2,
-                                "korrelation": corr_val,
-                                "aktion": f"{less_important} gelöscht (geringere Standardabweichung)"
-                            })
-                        else:
-                            entscheidungen.append({
-                                "feature_1": col1,
-                                "feature_2": col2,
-                                "korrelation": corr_val,
-                                "aktion": "nicht gelöscht (weniger wichtiges Feature ist priorisiert)"
-                            })
+        if features_list:
+            feature_df = pd.DataFrame(features_list)
+            feature_df = feature_df.apply(pd.to_numeric, errors='ignore')
 
-        # 4. Reduziertes DataFrame erstellen
-        reduced_df = numeric_df.drop(columns=to_drop)
+            output_path = os.path.join(output_folder, f"{sheet_name}_features.xlsx")
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                feature_df.to_excel(writer, index=False, sheet_name="Features")
 
-        # 5. Reduziertes Feature-Set als Excel speichern
-        reduced_path = os.path.join(self.output_dir, f"{sheetname}_reduced_features.xlsx")
-        reduced_df.to_excel(reduced_path, index=False)
-        print(f"Reduzierte Features gespeichert: {reduced_path}")
-        if to_drop:
-            print(f"Entfernte Features ({len(to_drop)}): {sorted(to_drop)}")
+            print(f"Excel-Datei gespeichert: {output_path}")
         else:
-            print("Keine korrelierten Features über der Schwelle gefunden.")
+            print(f"Keine gültigen Daten in Sheet '{sheet_name}'.")
 
-        # 6. Entscheidungs-Log speichern
-        if entscheidungen:
-            entscheidungs_df = pd.DataFrame(entscheidungen)
-            log_path = os.path.join(self.output_dir, f"{sheetname}_korrelation_entfernt.csv")
-            entscheidungs_df.to_csv(log_path, index=False)
-            print(f"Entscheidungsübersicht gespeichert: {log_path}")
-
-# Beispiel-Dateien
-excel_files = [
-    'feature_excels/DOE1_features.xlsx',
-    'feature_excels/DOE2_features.xlsx',
-    'feature_excels/DOE3_features.xlsx'
-]
-
-# Manuell bevorzugte Features
-priorisierte_features = {
-    "area_total", "global_maxima", "Trajectory_length", "slope_max", "peak_count", "valley_count"
-}
-
+# Nur zur direkten Ausführung
 if __name__ == "__main__":
-    generator = KorrelationsmatrixGenerator(
-        dateipfade=excel_files,
-        korrelationsschwelle=0.7,
-        priorisierte_features=priorisierte_features
-    )
-    generator.erstelle_korrelationen()
+    input_excel = "xlsx_files/DOEs_aufbereitet_alle_sheets_neu.xlsx"
+    process_excel_with_multiple_sheets(input_excel)

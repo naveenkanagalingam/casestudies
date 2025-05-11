@@ -67,17 +67,22 @@ class KorrelationsmatrixGenerator:
                         less_important = col1 if std1 < std2 else col2
                         to_drop.add(less_important)
 
-        # 4. Reduziertes DataFrame erstellen
+        # 4. Reduziertes DataFrame erstellen und wichtige Spalten wieder anhängen
         reduced_df = numeric_df.drop(columns=to_drop)
+
+        # cu_id und kategorie wieder einfügen, falls sie im Original vorhanden sind
+        meta_cols = []
+        for col in ["cu_id", "kategorie"]:
+            if col in df.columns:
+                meta_cols.append(df[col])
+
+        if meta_cols:
+            reduced_df = pd.concat([*meta_cols, reduced_df], axis=1)
 
         # 5. Reduziertes Feature-Set als Excel speichern
         reduced_path = os.path.join(self.output_dir, f"{sheetname}_reduced_features.xlsx")
         reduced_df.to_excel(reduced_path, index=False)
-        print(f"Reduzierte Features gespeichert: {reduced_path}")
-        if to_drop:
-            print(f"Entfernte Features ({len(to_drop)}): {sorted(to_drop)}")
-        else:
-            print("Keine korrelierten Features über der Schwelle gefunden.")
+
 
 # Beispiel-Dateien
 excel_files = [
