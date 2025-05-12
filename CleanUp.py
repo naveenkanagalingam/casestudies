@@ -16,7 +16,8 @@ class FolderCleaner:
             'extended_features',
             'features',
             'Korrelation',
-            'feature_excels'
+            'feature_excels',
+            'PCA'
         ]
         self.exclude_files = {"DOEs.xlsx"}
 

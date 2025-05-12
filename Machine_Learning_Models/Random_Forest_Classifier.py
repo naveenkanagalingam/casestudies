@@ -66,7 +66,7 @@ class MLModel:
             self.y_test,
             y_pred,
             labels=[0, 1],
-            target_names=["Schlecht", "Gut"]
+            target_names=["nicht akzeptabel", "akzeptabel"]
         )
         print(f"\n[{self.model_id}] Klassifikationsbericht:")
         print(report)
@@ -74,9 +74,9 @@ class MLModel:
         cm = confusion_matrix(self.y_test, y_pred, labels=[0, 1])
         plt.figure(figsize=(6, 4))
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-                    xticklabels=["Schlecht", "Gut"],
-                    yticklabels=["Schlecht", "Gut"])
-        plt.title(f"Konfusionsmatrix Modell {self.model_id}")
+                    xticklabels=["nicht akzeptabel", "akzeptabel"],
+                    yticklabels=["nicht akzeptabel", "akzeptabel"])
+        plt.title(f"Konfusionsmatrix RandomForest {self.model_id}")
         plt.xlabel("Vorhergesagt")
         plt.ylabel("Tatsächlich")
         plt.tight_layout()

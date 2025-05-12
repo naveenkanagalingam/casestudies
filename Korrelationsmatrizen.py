@@ -97,7 +97,7 @@ excel_files = [
 
 # Manuell bevorzugte Features
 priorisierte_features = {
-    "area_total", "global_maxima", "Trajectory_length", "slope_max", "peak_count", "valley_count"
+    "area_total", "global_maxima", "trajectory_length", "slope_max", "slope_phase1", "slope_phase2", "slope_phase3", "slope_phase4"
 }
 
 if __name__ == "__main__":
