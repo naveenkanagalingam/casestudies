@@ -8,8 +8,11 @@ def calculate_features(df_group):
     x = df_group['x_achse'].values
 
     area_total = float(np.trapz(y, x))
+    signal_energy = float(np.sum(np.square(y))) 
     global_maxima = float(np.max(y))
     global_minima = float(np.min(y))
+    mean_y = float(np.mean(y))
+    median_y = float(np.median(y))
     sd = float(np.std(y))
     trajectory_length = float(np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2)))
     peak_count = int(len(find_peaks(y)[0]))
@@ -27,8 +30,11 @@ def calculate_features(df_group):
 
     features = {
         'area_total': area_total,
+        'signal_energy': signal_energy,             
         'global_maxima': global_maxima,
         'global_minima': global_minima,
+        'mean_y': mean_y,
+        'median_y': median_y,
         'sd': sd,
         'trajectory_length': trajectory_length,
         'maxima_count': peak_count,
